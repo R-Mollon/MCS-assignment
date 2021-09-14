@@ -3,8 +3,6 @@ const { exec } = require('child_process');
 const http = require('http');
 const fs = require('fs');
 
-const videoURL = "http://mcs-dev.testing.s3.amazonaws.com/sample_videos/BigBuckBunny_720p_2800k.mp4";
-
 
 // Accepts a URL pointing to a remote file and downloads it.
 // Use-case is to download video files, but without checking
