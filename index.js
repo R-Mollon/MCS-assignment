@@ -17,9 +17,14 @@ const downloadVideo = videoURL => {
         const splitURL = videoURL.split("/");
         const fileName = splitURL[splitURL.length - 1];
 
+        // Create downloads directory if it does not exist
+        const fileDir = `${__dirname}/downloads`;
+        try {
+            fs.mkdirSync(fileDir)
+        } catch(error) {}
 
         // Download video
-        const filePath = `${__dirname}/downloads/${fileName}`;
+        const filePath = `${fileDir}/${fileName}`;
 
         try {
             if(fs.existsSync(filePath)) {
@@ -124,7 +129,7 @@ const processVideo = videoPath => {
 const arguments = process.argv;
 
 if(arguments.length !== 3) {
-    console.log("Usage: node ./index.js <Video URL>");
+    console.log("Usage: node ./index.js <Video URL>", arguments);
     return;
 }
 
