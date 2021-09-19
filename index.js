@@ -11,6 +11,14 @@ const downloadVideo = videoURL => {
         // Check if URL provided is a string
         if(typeof videoURL !== "string") {
             reject("Supplied URL must be in string format.");
+            return;
+        }
+
+        // Check if URL provided is a known video file format
+        const pattern = new RegExp(/\.(mp4|mov|wmv|flv|avi)$/);
+        if(!videoURL.toLowerCase().match(pattern)) {
+            reject("Supplied URL must point to a video file.");
+            return;
         }
 
         // Extract file name from URL and use the same name for local file
@@ -23,9 +31,9 @@ const downloadVideo = videoURL => {
             fs.mkdirSync(fileDir)
         } catch(error) {}
 
-        // Download video
         const filePath = `${fileDir}/${fileName}`;
 
+        // Check if a file already exists at this file path
         try {
             if(fs.existsSync(filePath)) {
                 console.log(`Detected file at ${filePath} already exists, using downloaded version`);
@@ -36,10 +44,7 @@ const downloadVideo = videoURL => {
             reject(error);
         }
 
-        const videoFile = fs.createWriteStream(filePath);
-
-        console.log(`Downloading file from ${videoURL}`);
-
+        // Download video
         const httpRequest = http.get(videoURL, response => {
             // Check status code of the response
             // We are looking for code 200 OK
@@ -48,7 +53,12 @@ const downloadVideo = videoURL => {
                     code: response.statusCode,
                     msg: "Failed to download file.",
                 });
+                return;
             }
+
+            console.log(`Downloading file from ${videoURL}`);
+
+            const videoFile = fs.createWriteStream(filePath);
 
             // Get a timestamp of starting time
             const startTime = Date.now();
@@ -63,6 +73,7 @@ const downloadVideo = videoURL => {
                 resolve(filePath);
             })
 
+            // Keep track of some data to display download progress
             let currentData = 0;
             const totalData = parseInt(response.headers['content-length']);
             const totalDataMB = (totalData / 1048576).toFixed(2)
@@ -99,9 +110,9 @@ const processVideo = videoPath => {
             // Unlink thumbnail file,
             // If the file already exists, ffmpeg
             // Will prompt for overwrite confirmation
-            if(fs.existsSync(thumbnailPath)) {
+            try {
                 fs.unlinkSync(thumbnailPath);
-            }
+            } catch(e) {/* Do nothing with error */};
 
             // Build arguments to send to ffmpeg
             // Over command line
@@ -115,7 +126,22 @@ const processVideo = videoPath => {
 
             // Run ffmpeg, extract the first frame
             // Of the video and same it as thumbnail.jpg
-            exec(execArgs.join(" "), (/*error, stdout*/) => {
+            exec(execArgs.join(" "), (error /*, stdout*/) => {
+
+                // Check for an error, if there is an error
+                // It should be the lack of an ffmpeg installation.
+                if(error) {
+                    const errorText = [
+                        "\nFATAL ERROR: ffmpeg installation not found.",
+                        "Please download ffmpeg from 'https://www.ffmpeg.org/download.html'",
+                        "Then either include the resulting executable in this directory, or add",
+                        "the path to its directory to the PATH environment variable.",
+                    ];
+
+                    reject(errorText.join("\n"));
+                    return;
+                }
+
                 console.log("Video Processed! Thumbnail saved to", thumbnailPath);
                 resolve();
             });
@@ -129,7 +155,7 @@ const processVideo = videoPath => {
 const arguments = process.argv;
 
 if(arguments.length !== 3) {
-    console.log("Usage: node ./index.js <Video URL>", arguments);
+    console.log("Usage: node ./index.js <Video URL>");
     return;
 }
 
@@ -139,5 +165,5 @@ downloadVideo(arguments[2]).then(videoPath => {
             console.log("Opening thumbnail...")
             exec(`"${__dirname}/thumbnail.jpg"`)
         },
-        error => console.log(error))
-}, error => console.log(error));
+        error => console.error(error))
+}, error => console.error(error));
