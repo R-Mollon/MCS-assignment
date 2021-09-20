@@ -132,7 +132,8 @@ const processVideo = videoPath => {
                 // It should be the lack of an ffmpeg installation.
                 if(error) {
                     const errorText = [
-                        "\nFATAL ERROR: ffmpeg installation not found.",
+                        "\nFATAL ERROR: call to ffmpeg failed.",
+                        "\nMost likely cause is lack of an accessible ffmpeg installation.",
                         "Please download ffmpeg from 'https://www.ffmpeg.org/download.html'",
                         "Then either include the resulting executable in this directory, or add",
                         "the path to its directory to the PATH environment variable.",
