@@ -7,7 +7,7 @@ const fs = require('fs');
 // Use-case is to download video files, but without checking
 // File extension, it can download any type of file.
 const downloadVideo = videoURL => {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         // Check if URL provided is a string
         if(typeof videoURL !== "string") {
             reject("Supplied URL must be in string format.");
@@ -26,23 +26,12 @@ const downloadVideo = videoURL => {
         const fileName = splitURL[splitURL.length - 1];
 
         // Create downloads directory if it does not exist
-        const fileDir = `${__dirname}/downloads`;
+        const fileDir = `./downloads`;
         try {
             fs.mkdirSync(fileDir)
         } catch(error) {}
 
         const filePath = `${fileDir}/${fileName}`;
-
-        // Check if a file already exists at this file path
-        try {
-            if(fs.existsSync(filePath)) {
-                console.log(`Detected file at ${filePath} already exists, using downloaded version`);
-                resolve(filePath);
-                return;
-            }
-        } catch(error) {
-            reject(error);
-        }
 
         // Autodetect protocol and use correct
         // Protocol in request.
@@ -53,6 +42,17 @@ const downloadVideo = videoURL => {
             protocol = https;
         else {
             reject("Invalid protocol. Must be either http:// or https://");
+        }
+
+        // Check if a file already exists at this file path
+        try {
+            if(fs.existsSync(filePath)) {
+                console.log(`Detected file at ${filePath} already exists, using downloaded version`);
+                resolve(filePath);
+                return;
+            }
+        } catch(error) {
+            reject(error);
         }
 
         // Download video
@@ -113,7 +113,7 @@ const processVideo = videoPath => {
         console.log("Processing video file: Extracting thumbnail.");
 
         try {
-            const thumbnailPath = `${__dirname}/thumbnail.jpg`;
+            const thumbnailPath = `./thumbnail.jpg`;
 
             // Unlink thumbnail file,
             // If the file already exists, ffmpeg
@@ -165,6 +165,7 @@ const arguments = process.argv;
 
 if(arguments.length !== 3) {
     console.log("Usage: node ./index.js <Video URL>");
+    console.log("Example: node ./index.js https://example.com/path-to-video/video-name.mp4");
     return;
 }
 
@@ -172,7 +173,7 @@ downloadVideo(arguments[2]).then(videoPath => {
     processVideo(videoPath).then(
         () => {
             console.log("Opening thumbnail...")
-            exec(`"${__dirname}/thumbnail.jpg"`)
+            exec(`"./thumbnail.jpg"`)
         },
         error => console.error(error))
 }, error => console.error(error));
