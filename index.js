@@ -1,7 +1,7 @@
 const { exec } = require('child_process');
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
-
 
 // Accepts a URL pointing to a remote file and downloads it.
 // Use-case is to download video files, but without checking
@@ -44,15 +44,23 @@ const downloadVideo = videoURL => {
             reject(error);
         }
 
+        // Autodetect protocol and use correct
+        // Protocol in request.
+        let protocol;
+        if(videoURL.startsWith("http://"))
+            protocol = http;
+        else if(videoURL.startsWith("https://"))
+            protocol = https;
+        else {
+            reject("Invalid protocol. Must be either http:// or https://");
+        }
+
         // Download video
-        const httpRequest = http.get(videoURL, response => {
+        const httpRequest = protocol.get(videoURL, response => {
             // Check status code of the response
             // We are looking for code 200 OK
             if(response.statusCode !== 200) {
-                reject({
-                    code: response.statusCode,
-                    msg: "Failed to download file.",
-                });
+                reject(`Failed to download file. (Error ${response.statusCode})`);
                 return;
             }
 
